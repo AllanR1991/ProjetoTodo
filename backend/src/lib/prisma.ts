@@ -146,6 +146,15 @@ class InMemoryTaskStore {
       return { ...newUser };
     },
 
+    update: async (args: any) => {
+      const index = this.users.findIndex(
+        (user) => (args.where.id && user.id === args.where.id) || (args.where.email && user.email === args.where.email)
+      );
+      if (index === -1) throw new Error('Usuário não encontrado');
+      this.users[index] = { ...this.users[index], ...args.data, updated_at: new Date() };
+      return { ...this.users[index] };
+    },
+
     findMany: async () => [...this.users],
   };
 

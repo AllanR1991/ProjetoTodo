@@ -10,6 +10,7 @@ import {
   Folder,
   LogOut,
   User as UserIcon,
+  Key,
 } from 'lucide-react';
 import { ListType, ColumnList, User } from '../types/task';
 
@@ -24,6 +25,7 @@ interface SidebarProps {
   onToggleViewMode: (mode: 'list' | 'kanban') => void;
   onOpenCreateColumn: () => void;
   onOpenCreateTask?: () => void;
+  onOpenChangePassword?: () => void;
   currentUser?: User | null;
   onLogout?: () => void;
 }
@@ -39,6 +41,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onToggleViewMode,
   onOpenCreateColumn,
   onOpenCreateTask,
+  onOpenChangePassword,
   currentUser,
   onLogout,
 }) => {
@@ -206,12 +209,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </button>
         </nav>
 
-        {/* Perfil do Usuário Autenticado & Logout */}
+        {/* Perfil do Usuário Autenticado, Alterar Senha & Logout */}
         {currentUser && (
           <div className="p-3 border-t border-gray-100 bg-gray-50/70">
-            <div className="flex items-center justify-between gap-2.5 p-2 rounded-xl bg-white border border-gray-200/70 shadow-2xs">
+            <div className="flex flex-col gap-2 p-2.5 rounded-2xl bg-white border border-gray-200/80 shadow-2xs">
               <div className="flex items-center gap-2.5 min-w-0">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 text-white font-bold text-xs flex items-center justify-center flex-shrink-0 shadow-xs">
+                <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white font-bold text-xs flex items-center justify-center flex-shrink-0 shadow-xs">
                   {getUserInitials(currentUser.name)}
                 </div>
                 <div className="min-w-0 flex-1">
@@ -224,16 +227,31 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 </div>
               </div>
 
-              {onLogout && (
-                <button
-                  type="button"
-                  onClick={onLogout}
-                  className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors flex-shrink-0"
-                  title="Sair da conta"
-                >
-                  <LogOut className="w-4 h-4" />
-                </button>
-              )}
+              {/* Ações da Conta: Alterar Senha e Sair */}
+              <div className="flex items-center gap-1.5 pt-1.5 border-t border-gray-100">
+                {onOpenChangePassword && (
+                  <button
+                    type="button"
+                    onClick={onOpenChangePassword}
+                    className="flex-1 py-1.5 px-2 bg-gray-50 hover:bg-blue-50 text-gray-700 hover:text-blue-700 active:bg-blue-100 rounded-lg text-[11px] font-semibold transition-colors flex items-center justify-center gap-1.5"
+                    title="Alterar sua senha de acesso"
+                  >
+                    <Key className="w-3.5 h-3.5 text-blue-600" />
+                    <span>Alterar Senha</span>
+                  </button>
+                )}
+
+                {onLogout && (
+                  <button
+                    type="button"
+                    onClick={onLogout}
+                    className="p-1.5 bg-gray-50 hover:bg-red-50 text-gray-400 hover:text-red-600 rounded-lg transition-colors flex items-center justify-center flex-shrink-0"
+                    title="Sair da conta"
+                  >
+                    <LogOut className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         )}

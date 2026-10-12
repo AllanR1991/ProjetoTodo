@@ -203,6 +203,39 @@ async function runTests() {
   assert(decoded.userId === 'user-teste-123', 'JWT: gera e valida token assinado');
   assert(decoded.email === 'teste@empresa.com', 'JWT: payload contém email correto');
 
+  // -------------------------------------------------------------------------
+  // 6. TESTES DE ALTERAÇÃO DE SENHA SEGURA (BCRYPT + DATABASE)
+  // -------------------------------------------------------------------------
+  console.log('\n--- 6. Testando Fluxo de Alteração de Senha Segura ---');
+  const oldPass = 'SenhaAntiga@123';
+  const newPass = 'NovaSenhaSegura@2026';
+  const oldHash = await AuthService.hashPassword(oldPass);
+
+  const tempUser = await prisma.user.create({
+    data: {
+      name: 'User Password Test',
+      email: `pwtest-${Date.now()}@teste.com`,
+      password: oldHash,
+    },
+  });
+
+  const checkOldValid = await AuthService.comparePassword(oldPass, tempUser.password);
+  assert(checkOldValid === true, 'Troca de Senha: senha antiga validada com sucesso');
+
+  const newHash = await AuthService.hashPassword(newPass);
+  const updatedUser = await prisma.user.update({
+    where: { id: tempUser.id },
+    data: { password: newHash },
+  });
+
+  const checkNewValid = await AuthService.comparePassword(newPass, updatedUser.password);
+  const checkOldNowFails = await AuthService.comparePassword(oldPass, updatedUser.password);
+  assert(checkNewValid === true, 'Troca de Senha: nova senha aceita após alteração');
+  assert(checkOldNowFails === false, 'Troca de Senha: senha anterior deixa de ser válida');
+
+  // Limpeza
+  await prisma.user.delete({ where: { id: tempUser.id } });
+
   console.log('\n======================================================');
   console.log(`🎉 RESULTADO: ${passed} de ${total} TESTES PASSARAM COM SUCESSO!`);
   console.log('======================================================\n');

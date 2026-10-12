@@ -75,9 +75,9 @@ export const TaskItem: React.FC<TaskItemProps> = ({
           e.stopPropagation();
           onToggleComplete(task, e);
         }}
-        className={`mt-0.5 flex-shrink-0 w-5 h-5 rounded-full border flex items-center justify-center transition-colors ${
+        className={`mt-0.5 flex-shrink-0 w-6 h-6 rounded-full border flex items-center justify-center transition-all active:scale-90 ${
           task.is_completed
-            ? 'bg-blue-600 border-blue-600 text-white'
+            ? 'bg-blue-600 border-blue-600 text-white shadow-xs'
             : 'border-gray-300 hover:border-blue-500 hover:bg-blue-50/50 text-transparent'
         }`}
         title={task.is_completed ? 'Marcar como não concluída' : 'Marcar como concluída'}
@@ -88,8 +88,8 @@ export const TaskItem: React.FC<TaskItemProps> = ({
       {/* Conteúdo da Tarefa */}
       <div className="flex-1 min-w-0">
         <h4
-          className={`text-sm font-medium leading-snug line-clamp-2 ${
-            task.is_completed ? 'line-through text-gray-400' : 'text-gray-800'
+          className={`text-sm font-semibold leading-snug line-clamp-2 ${
+            task.is_completed ? 'line-through text-gray-400' : 'text-gray-900'
           }`}
         >
           {task.title}
@@ -100,15 +100,15 @@ export const TaskItem: React.FC<TaskItemProps> = ({
           {/* Badge de Data */}
           {dueInfo && (
             <span
-              className={`inline-flex items-center gap-1 font-medium ${
+              className={`inline-flex items-center gap-1 font-semibold px-2 py-0.5 rounded-md text-[11px] ${
                 dueInfo.isOverdue
-                  ? 'text-red-600'
+                  ? 'bg-red-50 text-red-700 font-bold border border-red-200/60'
                   : dueInfo.isToday
-                  ? 'text-amber-600'
-                  : 'text-gray-500'
+                  ? 'bg-amber-50 text-amber-800 font-bold border border-amber-200/60'
+                  : 'bg-gray-100 text-gray-600'
               }`}
             >
-              <Calendar className="w-3.5 h-3.5" />
+              <Calendar className="w-3 h-3" />
               <span>{dueInfo.label}</span>
             </span>
           )}
@@ -116,14 +116,14 @@ export const TaskItem: React.FC<TaskItemProps> = ({
           {/* Badge de Subtarefas */}
           {task.subtasks && task.subtasks.length > 0 && (
             <span
-              className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] font-medium ${
+              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold ${
                 task.subtasks.every((s) => s.is_completed)
-                  ? 'bg-emerald-50 text-emerald-700 font-bold'
+                  ? 'bg-emerald-50 text-emerald-700 font-bold border border-emerald-200/60'
                   : 'bg-gray-100 text-gray-600'
               }`}
               title="Tarefas do cartão (subtarefas)"
             >
-              <CheckSquare className="w-3 h-3" />
+              <CheckSquare className="w-3 h-3 text-blue-600" />
               <span>
                 {task.subtasks.filter((s) => s.is_completed).length}/{task.subtasks.length}
               </span>
@@ -133,7 +133,7 @@ export const TaskItem: React.FC<TaskItemProps> = ({
           {/* Badge de Recorrência */}
           {recurrenceLabel && (
             <span
-              className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 font-medium text-[11px]"
+              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 font-semibold text-[11px] border border-blue-100"
               title={`Recorrência ativa: ${recurrenceLabel}`}
             >
               <Repeat className="w-3 h-3 text-blue-600" />
@@ -143,14 +143,14 @@ export const TaskItem: React.FC<TaskItemProps> = ({
 
           {/* Indicador de Descrição */}
           {task.description && (
-            <span className="text-[11px] text-gray-400 truncate max-w-[200px]" title={task.description}>
+            <span className="text-[11px] text-gray-400 truncate max-w-[180px]" title={task.description}>
               • {task.description}
             </span>
           )}
         </div>
       </div>
 
-      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity self-center">
+      <div className="flex items-center gap-1 opacity-70 sm:opacity-0 group-hover:opacity-100 transition-opacity self-center">
         {onDeleteTask && (
           <button
             type="button"
@@ -158,7 +158,7 @@ export const TaskItem: React.FC<TaskItemProps> = ({
               e.stopPropagation();
               onDeleteTask(task.id, task.title);
             }}
-            className="p-1.5 text-gray-400 hover:text-red-600 rounded-lg hover:bg-red-50 transition-colors"
+            className="p-1.5 text-gray-400 hover:text-red-600 active:text-red-600 rounded-lg hover:bg-red-50 transition-colors"
             title="Excluir tarefa"
           >
             <Trash2 className="w-4 h-4" />

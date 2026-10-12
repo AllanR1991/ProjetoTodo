@@ -6,6 +6,7 @@ import { TaskDetailPane } from './components/TaskDetailPane';
 import { ColumnModal } from './components/ColumnModal';
 import { DeleteConfirmModal } from './components/DeleteConfirmModal';
 import { CreateTaskModal } from './components/CreateTaskModal';
+import { ChangePasswordModal } from './components/ChangePasswordModal';
 import { Task, ListType, UpdateTaskDTO, RecurrenceRule, ColumnList, User, CreateTaskDTO } from './types/task';
 import { api } from './services/api';
 import { generateUUID } from './utils/uuid';
@@ -79,6 +80,9 @@ export function App() {
   // Controle do modal de criação de tarefa COMPLETA com todas as opções
   const [isCreateTaskModalOpen, setIsCreateTaskModalOpen] = useState(false);
   const [createTaskInitialList, setCreateTaskInitialList] = useState<ListType>('my_day');
+
+  // Controle do modal de alteração de senha
+  const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] = useState(false);
 
   // Controle do modal de criação/edição de colunas
   const [isColumnModalOpen, setIsColumnModalOpen] = useState(false);
@@ -491,6 +495,7 @@ export function App() {
           setIsColumnModalOpen(true);
         }}
         onOpenCreateTask={() => handleOpenFullCreate()}
+        onOpenChangePassword={() => setIsChangePasswordModalOpen(true)}
         currentUser={currentUser}
         onLogout={handleLogout}
       />
@@ -607,6 +612,13 @@ export function App() {
         defaultList={createTaskInitialList}
         onClose={() => setIsCreateTaskModalOpen(false)}
         onCreateTask={handleCreateFullTask}
+      />
+
+      {/* Modal de Alteração de Senha do Usuário */}
+      <ChangePasswordModal
+        isOpen={isChangePasswordModalOpen}
+        onClose={() => setIsChangePasswordModalOpen(false)}
+        onSuccessToast={(msg) => showToast(msg)}
       />
 
       {/* Botão Flutuante (FAB) para Celular / Mobile */}

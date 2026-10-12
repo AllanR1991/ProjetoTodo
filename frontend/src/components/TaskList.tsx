@@ -73,31 +73,45 @@ export const TaskList: React.FC<TaskListProps> = ({
   return (
     <main className="flex-1 flex flex-col h-full overflow-hidden bg-[#fafafa]">
       {/* Top Header da Lista */}
-      <div className="p-6 pb-4 flex items-center justify-between border-b border-gray-100 bg-white/70 backdrop-blur-xs">
-        <div className="flex items-center gap-3">
+      <div className="p-4 sm:p-6 pb-3 sm:pb-4 flex items-center justify-between border-b border-gray-100 bg-white/80 backdrop-blur-xs flex-shrink-0">
+        <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
           <button
             type="button"
             onClick={onOpenMobileMenu}
-            className="md:hidden p-2 -ml-2 text-gray-500 hover:text-gray-900 rounded-lg"
+            className="md:hidden p-2 -ml-1 text-gray-500 hover:text-gray-900 rounded-lg hover:bg-gray-100"
+            title="Abrir menu"
           >
             <Menu className="w-5 h-5" />
           </button>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
             {meta.icon}
-            <div>
-              <h2 className="text-xl font-bold text-gray-900 tracking-tight">{meta.title}</h2>
-              <p className="text-xs text-gray-500 capitalize">{meta.subtitle}</p>
+            <div className="min-w-0">
+              <h2 className="text-lg sm:text-xl font-bold text-gray-900 tracking-tight truncate">{meta.title}</h2>
+              <p className="text-xs text-gray-500 capitalize truncate">{meta.subtitle}</p>
             </div>
           </div>
         </div>
 
-        <div className="text-xs font-semibold text-gray-400">
-          {pendingTasks.length} {pendingTasks.length === 1 ? 'pendente' : 'pendentes'}
+        <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+          <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-gray-100 text-gray-600">
+            {pendingTasks.length} {pendingTasks.length === 1 ? 'pendente' : 'pendentes'}
+          </span>
+
+          {onOpenFullCreate && (
+            <button
+              type="button"
+              onClick={onOpenFullCreate}
+              className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center gap-1.5"
+              title="Criar tarefa com todas as opções"
+            >
+              <span>+ Novo</span>
+            </button>
+          )}
         </div>
       </div>
 
       {/* Área com Scroll da Lista */}
-      <div className="flex-1 overflow-y-auto p-6 max-w-4xl w-full mx-auto space-y-5">
+      <div className="flex-1 overflow-y-auto p-3.5 sm:p-6 max-w-4xl w-full mx-auto space-y-4 sm:space-y-5">
         {/* Input Rápido no topo (Adicionar direto no Backlog / View atual) */}
         <QuickAddTask
           currentList={currentList}

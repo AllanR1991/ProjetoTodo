@@ -114,4 +114,66 @@ export const AuthController = {
       res.status(500).json({ error: 'Erro interno no servidor' });
     }
   },
+
+  /**
+   * Endpoint para alteração de senha do usuário autenticado
+   * POST /auth/change-password
+   * Header: Authorization: Bearer <token>
+   * Body: { currentPassword, newPassword }
+   */
+  async changePassword(req: Request, res: Response): Promise<void> {
+    try {
+      if (!req.userId) {
+        res.status(401).json({ error: 'Não autorizado' });
+        return;
+      }
+
+      const changePasswordSchema = z.object({
+        currentPassword: z.string().min(1, 'A senha atual é obrigatória'),
+        newPassword: z.string().min(6, 'A nova senha deve ter no mínimo 6 caracteres'),
+      });
+
+      const parsed = changePasswordSchema.safeParse(req.body);
+      if (!parsed.success) {
+        res.status(400).json({
+          error: 'Dados inválidos',
+          details: parsed.error.format(),
+        });
+        return;
+      }
+
+      const { currentPassword, newPassword } = parsed.data;
+
+      // Busca o usuário logado para obter o hash atual
+      const user = await prisma.user.findUnique({
+        where: { id: req.userId },
+      });
+
+      if (!user) {
+        res.status(404).json({ error: 'Usuário não encontrado' });
+        return;
+      }
+
+      // Valida se a senha atual está correta com bcrypt
+      const isCurrentValid = await AuthService.comparePassword(currentPassword, user.password);
+      if (!isCurrentValid) {
+        res.status(400).json({ error: 'A senha atual informada está incorreta.' });
+        return;
+      }
+
+      // Gera novo hash seguro
+      const hashedNewPassword = await AuthService.hashPassword(newPassword);
+
+      // Atualiza no banco
+      await prisma.user.update({
+        where: { id: req.userId },
+        data: { password: hashedNewPassword },
+      });
+
+      res.status(200).json({ message: 'Senha alterada com sucesso!' });
+    } catch (error: any) {
+      console.error('Erro ao alterar senha:', error);
+      res.status(500).json({ error: 'Erro interno ao processar a troca de senha' });
+    }
+  },
 };
