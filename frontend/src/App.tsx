@@ -7,7 +7,9 @@ import { ColumnModal } from './components/ColumnModal';
 import { DeleteConfirmModal } from './components/DeleteConfirmModal';
 import { CreateTaskModal } from './components/CreateTaskModal';
 import { ChangePasswordModal } from './components/ChangePasswordModal';
+import { NotificationModal } from './components/NotificationModal';
 import { Task, ListType, UpdateTaskDTO, RecurrenceRule, ColumnList, User, CreateTaskDTO } from './types/task';
+import { triggerHaptic } from './services/notification';
 import { api } from './services/api';
 import { generateUUID } from './utils/uuid';
 import { LoginScreen } from './components/LoginScreen';
@@ -83,6 +85,32 @@ export function App() {
 
   // Controle do modal de alteração de senha
   const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] = useState(false);
+
+  // Controle de PWA e Notificações Push
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [isNotificationModalOpen, setIsNotificationModalOpen] = useState(false);
+
+  // Escuta evento de instalação nativo do navegador
+  useEffect(() => {
+    const handleBeforeInstall = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+    window.addEventListener('beforeinstallprompt', handleBeforeInstall);
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
+    };
+  }, []);
+
+  const handleInstallApp = async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const choice = await deferredPrompt.userChoice;
+    if (choice?.outcome === 'accepted') {
+      showToast('✨ Aplicativo instalado com sucesso!');
+    }
+    setDeferredPrompt(null);
+  };
 
   // Controle do modal de criação/edição de colunas
   const [isColumnModalOpen, setIsColumnModalOpen] = useState(false);
@@ -313,6 +341,9 @@ export function App() {
   const handleToggleComplete = async (task: Task, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
 
+    // Feedback háptico tátil no celular
+    triggerHaptic(40);
+
     try {
       const response = await api.completeTask(task.id, task.is_completed);
 
@@ -496,6 +527,7 @@ export function App() {
         }}
         onOpenCreateTask={() => handleOpenFullCreate()}
         onOpenChangePassword={() => setIsChangePasswordModalOpen(true)}
+        onOpenNotifications={() => setIsNotificationModalOpen(true)}
         currentUser={currentUser}
         onLogout={handleLogout}
       />
@@ -619,6 +651,14 @@ export function App() {
         isOpen={isChangePasswordModalOpen}
         onClose={() => setIsChangePasswordModalOpen(false)}
         onSuccessToast={(msg) => showToast(msg)}
+      />
+
+      {/* Modal de Instalação no Celular & Notificações com Vibração */}
+      <NotificationModal
+        isOpen={isNotificationModalOpen}
+        onClose={() => setIsNotificationModalOpen(false)}
+        deferredPrompt={deferredPrompt}
+        onInstallApp={handleInstallApp}
       />
 
       {/* Botão Flutuante (FAB) para Celular / Mobile */}

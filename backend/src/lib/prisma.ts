@@ -22,6 +22,8 @@ class InMemoryTaskStore {
     },
   ];
 
+  private pushSubscriptions: any[] = [];
+
   private columns: any[] = [
     {
       id: 'col-my-day',
@@ -341,6 +343,53 @@ class InMemoryTaskStore {
       return removed;
     },
   };
+
+  pushSubscription = {
+    findUnique: async (args: any) => {
+      return this.pushSubscriptions.find((s) => s.endpoint === args.where.endpoint) || null;
+    },
+    findMany: async (args?: any) => {
+      let result = [...this.pushSubscriptions];
+      if (args?.where?.user_id) {
+        result = result.filter((s) => s.user_id === args.where.user_id);
+      }
+      return result;
+    },
+    upsert: async (args: any) => {
+      const idx = this.pushSubscriptions.findIndex((s) => s.endpoint === args.where.endpoint);
+      if (idx >= 0) {
+        this.pushSubscriptions[idx] = {
+          ...this.pushSubscriptions[idx],
+          ...args.update,
+          updated_at: new Date(),
+        };
+        return this.pushSubscriptions[idx];
+      }
+      const newSub = {
+        id: randomUUID(),
+        ...args.create,
+        created_at: new Date(),
+        updated_at: new Date(),
+      };
+      this.pushSubscriptions.push(newSub);
+      return newSub;
+    },
+    delete: async (args: any) => {
+      const idx = this.pushSubscriptions.findIndex((s) => s.endpoint === args.where.endpoint);
+      if (idx >= 0) {
+        return this.pushSubscriptions.splice(idx, 1)[0];
+      }
+      return null;
+    },
+    deleteMany: async (args?: any) => {
+      const initialCount = this.pushSubscriptions.length;
+      if (args?.where?.endpoint) {
+        this.pushSubscriptions = this.pushSubscriptions.filter((s) => s.endpoint !== args.where.endpoint);
+      }
+      return { count: initialCount - this.pushSubscriptions.length };
+    },
+  };
+
 
   async $transaction(fn: (tx: any) => Promise<any>) {
     return await fn(this);

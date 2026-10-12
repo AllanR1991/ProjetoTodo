@@ -69,6 +69,19 @@ export const WebhookController = {
 
       console.log(`[Webhook] Tarefa criada via e-mail: "${task.title}" (ID: ${task.id})`);
 
+      // Dispara notificação push para os dispositivos instalados
+      try {
+        const { NotificationService } = await import('../services/notification.service.js');
+        await NotificationService.sendNotificationToUser(null, {
+          title: '📧 Nova tarefa via e-mail',
+          body: task.title,
+          url: '/',
+          vibrate: [250, 100, 250],
+        });
+      } catch (pushErr) {
+        console.warn('⚠️ [Webhook] Não foi possível disparar push notification:', pushErr);
+      }
+
       res.status(201).json({
         success: true,
         message: 'Tarefa criada com sucesso a partir do e-mail recebido',

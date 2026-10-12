@@ -210,6 +210,25 @@ class ApiService {
       method: 'DELETE',
     });
   }
+
+  // Notificações Web Push
+  async getVapidPublicKey(): Promise<{ publicKey: string }> {
+    return this.request<{ publicKey: string }>('/notifications/public-key');
+  }
+
+  async savePushSubscription(subscription: any): Promise<{ message: string; subscriptionId: string }> {
+    return this.request<{ message: string; subscriptionId: string }>('/notifications/subscribe', {
+      method: 'POST',
+      body: JSON.stringify(subscription),
+    });
+  }
+
+  async sendTestNotification(): Promise<{ message: string; result: any }> {
+    return this.request<{ message: string; result: any }>('/notifications/test', {
+      method: 'POST',
+    });
+  }
 }
 
 export const api = new ApiService();
+

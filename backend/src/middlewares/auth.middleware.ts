@@ -49,3 +49,28 @@ export function authMiddleware(req: Request, res: Response, next: NextFunction):
     });
   }
 }
+
+/**
+ * Middleware opcional: se o token existir e for válido, associa o usuário ao request.
+ * Não bloqueia se o token estiver ausente.
+ */
+export function optionalAuthMiddleware(req: Request, _res: Response, next: NextFunction): void {
+  const authHeader = req.headers.authorization;
+  if (!authHeader) {
+    return next();
+  }
+
+  const parts = authHeader.split(' ');
+  if (parts.length === 2 && parts[0] === 'Bearer') {
+    try {
+      const payload = AuthService.verifyToken(parts[1]);
+      req.userId = payload.userId;
+      req.user = payload;
+    } catch {
+      // Ignora erro e continua sem usuário associado
+    }
+  }
+
+  next();
+}
+

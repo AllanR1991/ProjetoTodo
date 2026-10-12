@@ -128,3 +128,20 @@ npm run dev:backend   # Porta 4000
 npm run dev:frontend  # Porta 5173
 ```
 Acesse: [http://localhost:5173](http://localhost:5173).
+
+---
+
+## 📱 9. Aplicativo Mobile (PWA) & Notificações com Som e Vibração
+
+O sistema está configurado como **Progressive Web App (PWA)** de alto desempenho, podendo ser instalado diretamente no smartphone Android ou iPhone:
+
+### Como Instalar no Celular:
+* **Android (Chrome):** Acesse a URL da sua aplicação. Um botão de instalação aparecerá no menu lateral ("App Mobile & Alertas") ou toque no menu do navegador (⋮) e escolha **"Instalar aplicativo"**.
+* **iPhone / iOS (Safari):** Acesse o site no Safari, toque no botão **Compartilhar** (quadrado com seta para cima) e selecione **"Adicionar à Tela de Início"**.
+
+### Notificações Web Push & Vibração Háptica:
+1. Abra o menu **"App Mobile & Alertas"** na barra lateral.
+2. Toque em **"Ativar Notificações"** para conceder permissão.
+3. Teste instantaneamente com o botão **"Testar Som & Vibração Agora"** para validar o toque sonoro e a vibração em seu dispositivo.
+4. Notificações automáticas são disparadas ao receber novos e-mails via webhook e em conclusões de tarefas.
+

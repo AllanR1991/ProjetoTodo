@@ -19,8 +19,9 @@ model User {
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
-  tasks      Task[]
-  columns    Column[]
+  tasks              Task[]
+  columns            Column[]
+  push_subscriptions PushSubscription[]
 
   @@map("users")
 }
@@ -74,3 +75,20 @@ model Task {
   @@index([parent_task_id])
   @@map("tasks")
 }
+
+model PushSubscription {
+  id         String   @id @default(uuid()) @db.Uuid
+  endpoint   String   @unique @db.Text
+  p256dh     String   @db.Text
+  auth       String   @db.Text
+
+  user_id    String?  @db.Uuid
+  user       User?    @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@index([user_id])
+  @@map("push_subscriptions")
+}
+

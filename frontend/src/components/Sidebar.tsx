@@ -11,6 +11,8 @@ import {
   LogOut,
   User as UserIcon,
   Key,
+  Bell,
+  Smartphone,
 } from 'lucide-react';
 import { ListType, ColumnList, User } from '../types/task';
 
@@ -26,6 +28,7 @@ interface SidebarProps {
   onOpenCreateColumn: () => void;
   onOpenCreateTask?: () => void;
   onOpenChangePassword?: () => void;
+  onOpenNotifications?: () => void;
   currentUser?: User | null;
   onLogout?: () => void;
 }
@@ -42,6 +45,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onOpenCreateColumn,
   onOpenCreateTask,
   onOpenChangePassword,
+  onOpenNotifications,
   currentUser,
   onLogout,
 }) => {
@@ -207,6 +211,25 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <Plus className="w-4 h-4" />
             <span>Criar Nova Lista / Coluna</span>
           </button>
+
+          {onOpenNotifications && (
+            <div className="pt-2">
+              <button
+                type="button"
+                onClick={onOpenNotifications}
+                className="w-full flex items-center justify-between px-3 py-2.5 text-xs font-semibold text-indigo-700 bg-indigo-50/70 hover:bg-indigo-100/80 rounded-xl transition-all border border-indigo-100 shadow-2xs group"
+                title="Configurar aplicativo no celular e notificações com som e vibração"
+              >
+                <div className="flex items-center gap-2.5">
+                  <Smartphone className="w-4 h-4 text-indigo-600 group-hover:scale-110 transition-transform" />
+                  <span>App Mobile & Alertas</span>
+                </div>
+                <span className="flex items-center gap-1 text-[10px] bg-indigo-200/80 text-indigo-800 font-bold px-1.5 py-0.5 rounded-md">
+                  <Bell className="w-3 h-3 text-indigo-700" />
+                </span>
+              </button>
+            </div>
+          )}
         </nav>
 
         {/* Perfil do Usuário Autenticado, Alterar Senha & Logout */}

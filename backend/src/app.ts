@@ -4,6 +4,7 @@ import authRoutes from './routes/auth.routes.js';
 import taskRoutes from './routes/task.routes.js';
 import webhookRoutes from './routes/webhook.routes.js';
 import columnRoutes from './routes/column.routes.js';
+import notificationRoutes from './routes/notification.routes.js';
 import { authMiddleware } from './middlewares/auth.middleware.js';
 
 export function createApp(): Express {
@@ -78,6 +79,9 @@ export function createApp(): Express {
 
   // Webhooks externos (Make, Zapier)
   app.use('/webhooks', webhookRoutes);
+
+  // Notificações Web Push (VAPID, registro de Service Worker e teste)
+  app.use('/notifications', notificationRoutes);
 
   // Tratamento de 404 (Rota não encontrada)
   app.use((req: Request, res: Response) => {
