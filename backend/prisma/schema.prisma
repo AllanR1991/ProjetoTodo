@@ -1,0 +1,76 @@
+// Prisma Schema para Microsoft To Do & Trello Clone
+// Suporte nativo ao Supabase (PostgreSQL) com Connection Pooling (Transaction Mode)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id         String   @id @default(uuid()) @db.Uuid
+  name       String
+  email      String   @unique
+  password   String   // Hash bcrypt seguro
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  tasks      Task[]
+  columns    Column[]
+
+  @@map("users")
+}
+
+model Column {
+  id         String   @id @default(uuid()) @db.Uuid
+  name       String
+  slug       String
+  color      String?  @default("#3b82f6")
+  icon       String?  @default("Folder")
+  position   Int      @default(0)
+  is_system  Boolean  @default(false)
+
+  user_id    String?  @db.Uuid
+  user       User?    @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@index([user_id])
+  @@map("columns")
+}
+
+model Task {
+  id              String    @id @default(uuid()) @db.Uuid
+  title           String
+  description     String?   @db.Text
+  list_type       String    @default("backlog") // slug da coluna/lista
+  due_date        DateTime?
+  is_completed    Boolean   @default(false)
+  completed_at    DateTime?
+  recurrence_rule Json?     // ex: {"type": "monthly", "monthly_mode": "day_of_month", "day_of_month": 15}
+  subtasks        Json?     // Lista de subtarefas: [{"id": "...", "title": "...", "is_completed": false}]
+  position        Int       @default(0)
+
+  user_id         String?   @db.Uuid
+  user            User?     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  // Self-relation para rastrear a tarefa mestre/origem da série recorrente
+  parent_task_id  String?   @db.Uuid
+  parent_task     Task?     @relation("TaskRecurrence", fields: [parent_task_id], references: [id], onDelete: SetNull)
+  sub_instances   Task[]    @relation("TaskRecurrence")
+
+  created_at      DateTime  @default(now())
+  updated_at      DateTime  @updatedAt
+
+  @@index([user_id])
+  @@index([list_type])
+  @@index([is_completed])
+  @@index([due_date])
+  @@index([parent_task_id])
+  @@map("tasks")
+}
