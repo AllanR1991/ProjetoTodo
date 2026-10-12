@@ -9,6 +9,7 @@ import {
   Share,
   PlusSquare,
   Sparkles,
+  BellRing,
 } from 'lucide-react';
 import {
   subscribeToPushNotifications,
@@ -102,11 +103,11 @@ export const NotificationModal: React.FC<NotificationModalProps> = ({
         <div className="p-5 border-b border-gray-100 flex items-center justify-between bg-gradient-to-r from-blue-600 to-indigo-600 text-white">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center shadow-inner">
-              <Smartphone className="w-5 h-5 text-white" />
+              <BellRing className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h2 className="text-base font-bold leading-tight">App no Celular & Notificações</h2>
-              <p className="text-xs text-blue-100">Instalação e alertas com vibração</p>
+              <h2 className="text-base font-bold leading-tight">Notificações & App (Web e Mobile)</h2>
+              <p className="text-xs text-blue-100">Alertas no PC (Windows/Mac) e no celular com vibração</p>
             </div>
           </div>
           <button
@@ -168,7 +169,7 @@ export const NotificationModal: React.FC<NotificationModalProps> = ({
             </div>
 
             <p className="text-xs text-gray-600 leading-relaxed">
-              Receba avisos com vibração na tela de bloqueio quando tarefas vencerem ou chegarem via e-mail.
+              Receba alertas no navegador do PC (Windows/Mac) e no celular com som e vibração na tela de bloqueio quando tarefas vencerem ou chegarem via e-mail.
             </p>
 
             <div className="pt-2 flex flex-col sm:flex-row gap-2">

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Sun, Calendar, Inbox, ChevronDown, ChevronRight, CheckCircle, Menu } from 'lucide-react';
+import { Sun, Calendar, Inbox, ChevronDown, ChevronRight, CheckCircle, Menu, PanelLeft, Kanban, ListFilter } from 'lucide-react';
 import { Task, ListType, RecurrenceRule } from '../types/task';
 import { QuickAddTask } from './QuickAddTask';
 import { TaskItem } from './TaskItem';
@@ -13,6 +13,10 @@ interface TaskListProps {
   onToggleComplete: (task: Task, e: React.MouseEvent) => void;
   onAddTask: (title: string, listType: ListType, dueDate?: string | null, recurrence?: RecurrenceRule | null) => Promise<void>;
   onOpenMobileMenu: () => void;
+  onToggleSidebar?: () => void;
+  isSidebarCollapsed?: boolean;
+  viewMode?: 'list' | 'kanban';
+  onToggleViewMode?: (mode: 'list' | 'kanban') => void;
   onDeleteTask?: (taskId: string, taskTitle?: string) => void;
   onOpenFullCreate?: () => void;
 }
@@ -26,6 +30,10 @@ export const TaskList: React.FC<TaskListProps> = ({
   onToggleComplete,
   onAddTask,
   onOpenMobileMenu,
+  onToggleSidebar,
+  isSidebarCollapsed = false,
+  viewMode = 'list',
+  onToggleViewMode,
   onDeleteTask,
   onOpenFullCreate,
 }) => {
@@ -73,27 +81,61 @@ export const TaskList: React.FC<TaskListProps> = ({
   return (
     <main className="flex-1 flex flex-col h-full overflow-hidden bg-[#fafafa]">
       {/* Top Header da Lista */}
-      <div className="p-4 sm:p-6 pb-3 sm:pb-4 flex items-center justify-between border-b border-gray-100 bg-white/80 backdrop-blur-xs flex-shrink-0">
-        <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+      <div className="p-3.5 sm:p-5 pb-3 sm:pb-3.5 flex items-center justify-between border-b border-gray-100 bg-white/80 backdrop-blur-xs flex-shrink-0">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+          {/* Botão de Toggle do Menu (Mobile e Web Desktop) */}
           <button
             type="button"
-            onClick={onOpenMobileMenu}
-            className="md:hidden p-2 -ml-1 text-gray-500 hover:text-gray-900 rounded-lg hover:bg-gray-100"
-            title="Abrir menu"
+            onClick={onToggleSidebar || onOpenMobileMenu}
+            className="p-2 -ml-1 text-gray-500 hover:text-gray-900 rounded-xl hover:bg-gray-100 transition-colors flex items-center justify-center flex-shrink-0"
+            title={isSidebarCollapsed ? 'Exibir menu lateral (Ctrl+B)' : 'Ocultar menu lateral (Ctrl+B)'}
           >
-            <Menu className="w-5 h-5" />
+            <PanelLeft className="w-5 h-5" />
           </button>
+
           <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
             {meta.icon}
             <div className="min-w-0">
-              <h2 className="text-lg sm:text-xl font-bold text-gray-900 tracking-tight truncate">{meta.title}</h2>
-              <p className="text-xs text-gray-500 capitalize truncate">{meta.subtitle}</p>
+              <h2 className="text-base sm:text-lg font-bold text-gray-900 tracking-tight truncate leading-tight">{meta.title}</h2>
+              <p className="text-[11px] text-gray-500 capitalize truncate">{meta.subtitle}</p>
             </div>
           </div>
         </div>
 
         <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
-          <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-gray-100 text-gray-600">
+          {/* Alternador Rápido de Visão: Lista vs Kanban */}
+          {onToggleViewMode && (
+            <div className="flex bg-gray-100/90 p-0.5 rounded-xl items-center border border-gray-200/60 shadow-2xs">
+              <button
+                type="button"
+                onClick={() => onToggleViewMode('list')}
+                className={`px-2.5 py-1 text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 ${
+                  viewMode === 'list'
+                    ? 'bg-white text-gray-900 shadow-2xs'
+                    : 'text-gray-500 hover:text-gray-800'
+                }`}
+                title="Visualização em Lista"
+              >
+                <ListFilter className="w-3.5 h-3.5 text-blue-600" />
+                <span className="hidden sm:inline">Lista</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => onToggleViewMode('kanban')}
+                className={`px-2.5 py-1 text-xs font-semibold rounded-lg transition-all flex items-center gap-1.5 ${
+                  viewMode === 'kanban'
+                    ? 'bg-white text-gray-900 shadow-2xs'
+                    : 'text-gray-500 hover:text-gray-800'
+                }`}
+                title="Visualização em Quadro Kanban (Trello)"
+              >
+                <Kanban className="w-3.5 h-3.5 text-indigo-600" />
+                <span className="hidden sm:inline">Quadro</span>
+              </button>
+            </div>
+          )}
+
+          <span className="hidden xs:inline-block text-xs font-semibold px-2.5 py-1 rounded-full bg-gray-100 text-gray-600">
             {pendingTasks.length} {pendingTasks.length === 1 ? 'pendente' : 'pendentes'}
           </span>
 

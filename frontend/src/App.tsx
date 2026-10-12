@@ -10,7 +10,7 @@ import { ChangePasswordModal } from './components/ChangePasswordModal';
 import { NotificationModal } from './components/NotificationModal';
 import { EmailIntegrationModal } from './components/EmailIntegrationModal';
 import { Task, ListType, UpdateTaskDTO, RecurrenceRule, ColumnList, User, CreateTaskDTO } from './types/task';
-import { triggerHaptic } from './services/notification';
+import { triggerHaptic, showLocalNotification } from './services/notification';
 import { api } from './services/api';
 import { generateUUID } from './utils/uuid';
 import { getUserCache, setUserCache, clearUserCache } from './services/cache';
@@ -94,6 +94,39 @@ export function App() {
   });
 
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const [isDesktopSidebarCollapsed, setIsDesktopSidebarCollapsed] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    return localStorage.getItem('todo_sidebar_collapsed') === 'true';
+  });
+
+  const handleToggleDesktopSidebar = useCallback(() => {
+    setIsDesktopSidebarCollapsed((prev) => {
+      const next = !prev;
+      localStorage.setItem('todo_sidebar_collapsed', String(next));
+      return next;
+    });
+  }, []);
+
+  const handleToggleSidebar = useCallback(() => {
+    if (typeof window !== 'undefined' && window.innerWidth < 768) {
+      setIsMobileSidebarOpen((prev) => !prev);
+    } else {
+      handleToggleDesktopSidebar();
+    }
+  }, [handleToggleDesktopSidebar]);
+
+  // Atalho global de teclado Ctrl+B / Cmd+B para alternar menu lateral
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'b') {
+        e.preventDefault();
+        handleToggleSidebar();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [handleToggleSidebar]);
+
   const [apiError, setApiError] = useState<string | null>(null);
   const [notification, setNotification] = useState<string | null>(null);
 
@@ -244,7 +277,10 @@ export function App() {
           setUserCache(currentUser.id, 'tasks', updated);
           return updated;
         });
-        showToast(`✨ Nova tarefa sincronizada: "${data.title}"`);
+        showToast(`✨ Nova tarefa: "${data.title}"`);
+        showLocalNotification(`Nova Tarefa: ${data.title}`, {
+          body: data.description ? data.description.slice(0, 100) : 'Adicionada ao seu To Do',
+        });
       } else if (type === 'task_updated') {
         setTasks((prev) => {
           const updated = prev.map((t) => (t.id === data.id ? { ...t, ...data } : t));
@@ -621,6 +657,8 @@ export function App() {
         taskCounts={taskCounts}
         isOpen={isMobileSidebarOpen}
         onCloseMobile={() => setIsMobileSidebarOpen(false)}
+        isDesktopCollapsed={isDesktopSidebarCollapsed}
+        onToggleDesktopCollapse={handleToggleDesktopSidebar}
         viewMode={viewMode}
         onToggleViewMode={setViewMode}
         onOpenCreateColumn={() => {
@@ -671,6 +709,10 @@ export function App() {
             onToggleComplete={handleToggleComplete}
             onAddTask={handleAddTask}
             onOpenMobileMenu={() => setIsMobileSidebarOpen(true)}
+            onToggleSidebar={handleToggleSidebar}
+            isSidebarCollapsed={isDesktopSidebarCollapsed}
+            viewMode={viewMode}
+            onToggleViewMode={setViewMode}
             onDeleteTask={handleRequestDeleteTask}
             onOpenFullCreate={() => handleOpenFullCreate(currentList)}
           />
@@ -695,6 +737,10 @@ export function App() {
             onDeleteTask={handleRequestDeleteTask}
             onOpenFullCreate={(colSlug) => handleOpenFullCreate(colSlug as ListType)}
             onOpenMobileMenu={() => setIsMobileSidebarOpen(true)}
+            onToggleSidebar={handleToggleSidebar}
+            isSidebarCollapsed={isDesktopSidebarCollapsed}
+            viewMode={viewMode}
+            onToggleViewMode={setViewMode}
           />
         )}
       </div>
