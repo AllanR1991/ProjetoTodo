@@ -119,7 +119,11 @@ class ApiService {
         let errorMessage = `Erro HTTP ${response.status}: ${response.statusText}`;
         try {
           const errorJson = await response.json();
-          if (errorJson.error) errorMessage = errorJson.error;
+          if (errorJson.error) {
+            errorMessage = errorJson.details && typeof errorJson.details === 'string'
+              ? `${errorJson.error} (${errorJson.details})`
+              : errorJson.error;
+          }
         } catch {
           // ignore json parse error
         }

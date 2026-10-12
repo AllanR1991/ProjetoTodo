@@ -68,9 +68,16 @@ export const AuthController = {
           email: user.email,
         },
       });
-    } catch (error) {
-      console.error('Erro ao processar login:', error);
-      res.status(500).json({ error: 'Erro interno ao realizar autenticação' });
+    } catch (error: any) {
+      console.error('🚨 [LOGIN ERROR]', {
+        message: error?.message,
+        code: error?.code,
+        stack: error?.stack,
+      });
+      res.status(500).json({
+        error: 'Erro interno ao realizar autenticação',
+        details: error?.message || 'Falha de comunicação com o banco de dados',
+      });
     }
   },
 

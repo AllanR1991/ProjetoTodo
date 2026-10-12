@@ -33,10 +33,24 @@ export function createApp(): Express {
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
 
-  // Status / Health check
-  app.get('/health', (req: Request, res: Response) => {
-    res.status(200).json({
-      status: 'healthy',
+  // Status / Health check com diagnóstico de banco
+  app.get('/health', async (req: Request, res: Response) => {
+    let dbStatus = 'disconnected';
+    let dbError: string | null = null;
+
+    try {
+      await prisma.$queryRawUnsafe('SELECT 1');
+      dbStatus = 'connected';
+    } catch (err: any) {
+      dbStatus = 'error';
+      dbError = err?.message || String(err);
+    }
+
+    const isHealthy = dbStatus === 'connected';
+    res.status(isHealthy ? 200 : 503).json({
+      status: isHealthy ? 'healthy' : 'degraded',
+      database: dbStatus,
+      dbError,
       timestamp: new Date().toISOString(),
       service: 'todo-backend-api',
     });
