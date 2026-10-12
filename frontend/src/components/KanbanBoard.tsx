@@ -10,6 +10,8 @@ import {
   GripVertical,
   CheckSquare,
   SlidersHorizontal,
+  Menu,
+  Kanban,
 } from 'lucide-react';
 import { Task, ColumnList } from '../types/task';
 
@@ -26,6 +28,7 @@ interface KanbanBoardProps {
   onDeleteColumn: (columnId: string) => void;
   onDeleteTask: (taskId: string, taskTitle?: string) => void;
   onOpenFullCreate?: (columnSlug: string) => void;
+  onOpenMobileMenu?: () => void;
 }
 
 export const KanbanBoard: React.FC<KanbanBoardProps> = ({
@@ -41,6 +44,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
   onDeleteColumn,
   onDeleteTask,
   onOpenFullCreate,
+  onOpenMobileMenu,
 }) => {
   const [dragOverCol, setDragOverCol] = useState<string | null>(null);
   const [addingTaskCol, setAddingTaskCol] = useState<string | null>(null);
@@ -89,23 +93,75 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
   };
 
   return (
-    <div className="flex-1 overflow-x-auto overflow-y-hidden p-6 bg-[#f4f5f8] flex gap-5 items-start h-full">
-      {columns.map((col) => {
-        const colTasks = tasks.filter((t) => t.list_type === col.slug);
-        const isOver = dragOverCol === col.slug;
+    <div className="flex-1 flex flex-col h-full overflow-hidden bg-[#f4f5f8]">
+      {/* Top Header do Quadro Kanban */}
+      <div className="p-3.5 sm:p-5 pb-3 flex items-center justify-between border-b border-gray-200/80 bg-white/80 backdrop-blur-xs flex-shrink-0">
+        <div className="flex items-center gap-3">
+          {onOpenMobileMenu && (
+            <button
+              type="button"
+              onClick={onOpenMobileMenu}
+              className="md:hidden p-2 -ml-1 text-gray-600 hover:text-gray-900 rounded-lg hover:bg-gray-100"
+              title="Abrir menu"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+          )}
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow-xs">
+              <Kanban className="w-4 h-4 stroke-[2.5]" />
+            </div>
+            <div>
+              <h2 className="text-base sm:text-lg font-bold text-gray-900 tracking-tight leading-tight">
+                Quadro Kanban
+              </h2>
+              <p className="text-[11px] text-gray-500 font-medium">
+                {columns.length} colunas · {tasks.filter((t) => !t.is_completed).length} cards pendentes
+              </p>
+            </div>
+          </div>
+        </div>
 
-        return (
-          <div
-            key={col.id}
-            onDragOver={(e) => handleDragOver(e, col.slug)}
-            onDragLeave={(e) => handleDragLeave(e, col.slug)}
-            onDrop={(e) => handleDrop(e, col.slug)}
-            className={`w-80 flex-shrink-0 flex flex-col max-h-full rounded-2xl bg-[#ebecf0]/80 border transition-all duration-200 ${
-              isOver
-                ? 'border-blue-500 ring-2 ring-blue-300 bg-blue-50/40 shadow-md'
-                : 'border-gray-200/80 shadow-xs'
-            }`}
+        <div className="flex items-center gap-2">
+          {onOpenFullCreate && (
+            <button
+              type="button"
+              onClick={() => onOpenFullCreate('backlog')}
+              className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center gap-1.5"
+            >
+              <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
+              <span className="hidden sm:inline">Novo Cartão</span>
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={onOpenCreateColumn}
+            className="px-2.5 py-1.5 border border-gray-300 hover:bg-gray-100 text-gray-700 rounded-xl text-xs font-semibold transition-all flex items-center gap-1"
           >
+            <Plus className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Nova Coluna</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Conteúdo com Scroll Horizontal das Colunas */}
+      <div className="flex-1 overflow-x-auto overflow-y-hidden p-3 sm:p-5 flex gap-4 sm:gap-5 items-start h-full snap-x snap-mandatory">
+        {columns.map((col) => {
+          const colTasks = tasks.filter((t) => t.list_type === col.slug);
+          const isOver = dragOverCol === col.slug;
+
+          return (
+            <div
+              key={col.id}
+              onDragOver={(e) => handleDragOver(e, col.slug)}
+              onDragLeave={(e) => handleDragLeave(e, col.slug)}
+              onDrop={(e) => handleDrop(e, col.slug)}
+              className={`w-[84vw] sm:w-80 flex-shrink-0 snap-center sm:snap-align-none flex flex-col max-h-full rounded-2xl bg-[#ebecf0]/80 border transition-all duration-200 ${
+                isOver
+                  ? 'border-blue-500 ring-2 ring-blue-300 bg-blue-50/40 shadow-md'
+                  : 'border-gray-200/80 shadow-xs'
+              }`}
+            >
             {/* Header da Coluna */}
             <div className="p-3.5 pb-2 flex items-center justify-between border-b border-gray-200/60 relative">
               <div className="flex items-center gap-2.5 min-w-0">
@@ -346,6 +402,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
         <Plus className="w-4 h-4" />
         <span>Adicionar outra lista / coluna</span>
       </button>
+      </div>
     </div>
   );
 };

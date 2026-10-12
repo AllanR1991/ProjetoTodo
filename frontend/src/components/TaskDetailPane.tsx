@@ -95,7 +95,7 @@ export const TaskDetailPane: React.FC<TaskDetailPaneProps> = ({
   const completedSubtasksCount = subtasks.filter((s) => s.is_completed).length;
 
   return (
-    <aside className="w-full sm:w-88 md:w-96 flex-shrink-0 bg-white border-l border-gray-200 flex flex-col h-full shadow-lg md:shadow-none z-30 transition-all">
+    <aside className="fixed inset-0 z-50 md:static md:w-96 flex-shrink-0 bg-white border-l border-gray-200 flex flex-col h-full shadow-2xl md:shadow-none transition-all animate-in fade-in slide-in-from-right duration-200">
       {/* Header com Ações Rápidas */}
       <div className="p-4 border-b border-gray-100 flex items-center justify-between">
         <div className="flex items-center gap-2">

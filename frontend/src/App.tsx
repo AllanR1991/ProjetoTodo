@@ -5,11 +5,12 @@ import { KanbanBoard } from './components/KanbanBoard';
 import { TaskDetailPane } from './components/TaskDetailPane';
 import { ColumnModal } from './components/ColumnModal';
 import { DeleteConfirmModal } from './components/DeleteConfirmModal';
-import { Task, ListType, UpdateTaskDTO, RecurrenceRule, ColumnList, User } from './types/task';
+import { CreateTaskModal } from './components/CreateTaskModal';
+import { Task, ListType, UpdateTaskDTO, RecurrenceRule, ColumnList, User, CreateTaskDTO } from './types/task';
 import { api } from './services/api';
 import { generateUUID } from './utils/uuid';
 import { LoginScreen } from './components/LoginScreen';
-import { AlertCircle, RefreshCw } from 'lucide-react';
+import { AlertCircle, RefreshCw, Plus } from 'lucide-react';
 
 const INITIAL_DEFAULT_COLUMNS: ColumnList[] = [
   { id: 'col-my-day', name: 'Meu Dia', slug: 'my_day', color: '#d97706', icon: 'Sun', position: 0, is_system: true },
@@ -74,6 +75,10 @@ export function App() {
 
   // Modo de visualização: 'list' (Microsoft To Do) ou 'kanban' (Trello)
   const [viewMode, setViewMode] = useState<'list' | 'kanban'>('list');
+
+  // Controle do modal de criação de tarefa COMPLETA com todas as opções
+  const [isCreateTaskModalOpen, setIsCreateTaskModalOpen] = useState(false);
+  const [createTaskInitialList, setCreateTaskInitialList] = useState<ListType>('my_day');
 
   // Controle do modal de criação/edição de colunas
   const [isColumnModalOpen, setIsColumnModalOpen] = useState(false);
@@ -178,6 +183,36 @@ export function App() {
   });
 
   // --- AÇÕES DE TAREFAS ---
+  const handleOpenFullCreate = (initialList?: ListType) => {
+    setCreateTaskInitialList(initialList || currentList);
+    setIsCreateTaskModalOpen(true);
+  };
+
+  const handleCreateFullTask = async (taskData: CreateTaskDTO) => {
+    try {
+      const newTask = await api.createTask(taskData);
+      setTasks((prev) => [newTask, ...prev]);
+      showToast('Cartão criado com sucesso!');
+    } catch {
+      const mockTask: Task = {
+        id: generateUUID(),
+        title: taskData.title,
+        description: taskData.description || null,
+        list_type: taskData.list_type || currentList,
+        due_date: taskData.due_date || null,
+        is_completed: false,
+        recurrence_rule: taskData.recurrence_rule || null,
+        subtasks: taskData.subtasks || [],
+        parent_task_id: null,
+        position: 0,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+      setTasks((prev) => [mockTask, ...prev]);
+      showToast('Cartão salvo localmente!');
+    }
+  };
+
   const handleAddTask = async (
     title: string,
     listType: ListType,
@@ -418,6 +453,7 @@ export function App() {
           setColumnToEdit(null);
           setIsColumnModalOpen(true);
         }}
+        onOpenCreateTask={() => handleOpenFullCreate()}
         currentUser={currentUser}
         onLogout={handleLogout}
       />
@@ -459,6 +495,7 @@ export function App() {
             onAddTask={handleAddTask}
             onOpenMobileMenu={() => setIsMobileSidebarOpen(true)}
             onDeleteTask={handleRequestDeleteTask}
+            onOpenFullCreate={() => handleOpenFullCreate(currentList)}
           />
         ) : (
           <KanbanBoard
@@ -479,6 +516,8 @@ export function App() {
             }}
             onDeleteColumn={handleRequestDeleteColumn}
             onDeleteTask={handleRequestDeleteTask}
+            onOpenFullCreate={(colSlug) => handleOpenFullCreate(colSlug as ListType)}
+            onOpenMobileMenu={() => setIsMobileSidebarOpen(true)}
           />
         )}
       </div>
@@ -523,6 +562,26 @@ export function App() {
         onConfirm={handleConfirmDeleteColumn}
         onCancel={() => setColumnToDelete(null)}
       />
+
+      {/* Modal Completo para Criar Tarefa com TODAS as Opções */}
+      <CreateTaskModal
+        isOpen={isCreateTaskModalOpen}
+        columns={columns}
+        defaultList={createTaskInitialList}
+        onClose={() => setIsCreateTaskModalOpen(false)}
+        onCreateTask={handleCreateFullTask}
+      />
+
+      {/* Botão Flutuante (FAB) para Celular / Mobile */}
+      <button
+        type="button"
+        onClick={() => handleOpenFullCreate()}
+        className="md:hidden fixed bottom-6 right-6 z-40 w-14 h-14 rounded-full bg-blue-600 hover:bg-blue-700 active:scale-95 text-white shadow-xl shadow-blue-500/40 flex items-center justify-center transition-all"
+        title="Criar novo cartão com todas as opções"
+        aria-label="Criar novo cartão"
+      >
+        <Plus className="w-6 h-6 stroke-[2.5]" />
+      </button>
     </div>
   );
 }
