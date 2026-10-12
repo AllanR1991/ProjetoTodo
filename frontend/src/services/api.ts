@@ -11,6 +11,37 @@ import {
   AuthResponse,
 } from '../types/task';
 
+export interface EmailConfigData {
+  id?: string;
+  email: string;
+  host: string;
+  port?: number;
+  secure?: boolean;
+  folder?: string;
+  is_active?: boolean;
+  last_sync_at?: string | null;
+  hasPassword?: boolean;
+}
+
+export interface EmailTestPayload {
+  email: string;
+  host: string;
+  port?: number;
+  secure?: boolean;
+  password: string;
+  folder?: string;
+}
+
+export interface EmailSavePayload {
+  email: string;
+  host: string;
+  port?: number;
+  secure?: boolean;
+  password?: string;
+  folder?: string;
+  is_active?: boolean;
+}
+
 const TOKEN_KEY = 'todo_auth_token';
 const USER_KEY = 'todo_auth_user';
 
@@ -225,6 +256,37 @@ class ApiService {
 
   async sendTestNotification(): Promise<{ message: string; result: any }> {
     return this.request<{ message: string; result: any }>('/notifications/test', {
+      method: 'POST',
+    });
+  }
+
+  // --- SINCRONIZAÇÃO DE E-MAIL (IMAP DIRETO MULTI-USUÁRIO) ---
+  async getEmailConfig(): Promise<{ hasConfig: boolean; config: EmailConfigData | null }> {
+    return this.request<{ hasConfig: boolean; config: EmailConfigData | null }>('/email-sync/config');
+  }
+
+  async testEmailConnection(data: EmailTestPayload): Promise<{ success: boolean; message: string; folders?: string[] }> {
+    return this.request<{ success: boolean; message: string; folders?: string[] }>('/email-sync/test', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async saveEmailConfig(data: EmailSavePayload): Promise<{ message: string; config: EmailConfigData }> {
+    return this.request<{ message: string; config: EmailConfigData }>('/email-sync/config', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async removeEmailConfig(): Promise<{ message: string }> {
+    return this.request<{ message: string }>('/email-sync/config', {
+      method: 'DELETE',
+    });
+  }
+
+  async syncEmailsNow(): Promise<{ importedCount: number; message: string }> {
+    return this.request<{ importedCount: number; message: string }>('/email-sync/sync-now', {
       method: 'POST',
     });
   }

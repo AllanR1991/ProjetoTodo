@@ -6,7 +6,9 @@ import webhookRoutes from './routes/webhook.routes.js';
 import columnRoutes from './routes/column.routes.js';
 import notificationRoutes from './routes/notification.routes.js';
 import realtimeRoutes from './routes/realtime.routes.js';
+import emailSyncRoutes from './routes/email-sync.routes.js';
 import { authMiddleware } from './middlewares/auth.middleware.js';
+import prisma from './lib/prisma.js';
 
 export function createApp(): Express {
   const app = express();
@@ -86,6 +88,9 @@ export function createApp(): Express {
 
   // Sincronização em tempo real via Server-Sent Events (SSE)
   app.use('/realtime', realtimeRoutes);
+
+  // Sincronização nativa direta de e-mail (IMAP multi-usuário)
+  app.use('/email-sync', emailSyncRoutes);
 
   // Tratamento de 404 (Rota não encontrada)
   app.use((req: Request, res: Response) => {

@@ -13,6 +13,7 @@ import {
   Key,
   Bell,
   Smartphone,
+  Mail,
 } from 'lucide-react';
 import { ListType, ColumnList, User } from '../types/task';
 
@@ -29,6 +30,7 @@ interface SidebarProps {
   onOpenCreateTask?: () => void;
   onOpenChangePassword?: () => void;
   onOpenNotifications?: () => void;
+  onOpenEmailIntegration?: () => void;
   currentUser?: User | null;
   onLogout?: () => void;
 }
@@ -46,6 +48,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onOpenCreateTask,
   onOpenChangePassword,
   onOpenNotifications,
+  onOpenEmailIntegration,
   currentUser,
   onLogout,
 }) => {
@@ -226,6 +229,25 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 </div>
                 <span className="flex items-center gap-1 text-[10px] bg-indigo-200/80 text-indigo-800 font-bold px-1.5 py-0.5 rounded-md">
                   <Bell className="w-3 h-3 text-indigo-700" />
+                </span>
+              </button>
+            </div>
+          )}
+
+          {onOpenEmailIntegration && (
+            <div className="pt-1.5">
+              <button
+                type="button"
+                onClick={onOpenEmailIntegration}
+                className="w-full flex items-center justify-between px-3 py-2.5 text-xs font-semibold text-blue-700 bg-blue-50/70 hover:bg-blue-100/80 rounded-xl transition-all border border-blue-100 shadow-2xs group"
+                title="Conectar sua conta de e-mail (Gmail, Outlook) para criar tarefas automaticamente"
+              >
+                <div className="flex items-center gap-2.5">
+                  <Mail className="w-4 h-4 text-blue-600 group-hover:scale-110 transition-transform" />
+                  <span>Conectar E-mail</span>
+                </div>
+                <span className="flex items-center gap-1 text-[10px] bg-blue-200/80 text-blue-800 font-bold px-1.5 py-0.5 rounded-md">
+                  IMAP
                 </span>
               </button>
             </div>

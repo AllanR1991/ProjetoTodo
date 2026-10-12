@@ -8,6 +8,7 @@ import { DeleteConfirmModal } from './components/DeleteConfirmModal';
 import { CreateTaskModal } from './components/CreateTaskModal';
 import { ChangePasswordModal } from './components/ChangePasswordModal';
 import { NotificationModal } from './components/NotificationModal';
+import { EmailIntegrationModal } from './components/EmailIntegrationModal';
 import { Task, ListType, UpdateTaskDTO, RecurrenceRule, ColumnList, User, CreateTaskDTO } from './types/task';
 import { triggerHaptic } from './services/notification';
 import { api } from './services/api';
@@ -109,6 +110,7 @@ export function App() {
   // Controle de PWA e Notificações Push
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [isNotificationModalOpen, setIsNotificationModalOpen] = useState(false);
+  const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
 
   // Escuta evento de instalação nativo do navegador
   useEffect(() => {
@@ -628,6 +630,7 @@ export function App() {
         onOpenCreateTask={() => handleOpenFullCreate()}
         onOpenChangePassword={() => setIsChangePasswordModalOpen(true)}
         onOpenNotifications={() => setIsNotificationModalOpen(true)}
+        onOpenEmailIntegration={() => setIsEmailModalOpen(true)}
         currentUser={currentUser}
         onLogout={handleLogout}
       />
@@ -759,6 +762,16 @@ export function App() {
         onClose={() => setIsNotificationModalOpen(false)}
         deferredPrompt={deferredPrompt}
         onInstallApp={handleInstallApp}
+      />
+
+      {/* Modal de Integração de E-mail Direta (IMAP Multi-Usuário) */}
+      <EmailIntegrationModal
+        isOpen={isEmailModalOpen}
+        onClose={() => setIsEmailModalOpen(false)}
+        onTasksImported={() => {
+          loadData(true);
+        }}
+        showToast={showToast}
       />
 
       {/* Botão Flutuante (FAB) para Celular / Mobile */}

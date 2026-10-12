@@ -23,6 +23,7 @@ class InMemoryTaskStore {
   ];
 
   private pushSubscriptions: any[] = [];
+  private userEmailConfigs: any[] = [];
 
   private columns: any[] = [
     {
@@ -387,6 +388,63 @@ class InMemoryTaskStore {
         this.pushSubscriptions = this.pushSubscriptions.filter((s) => s.endpoint !== args.where.endpoint);
       }
       return { count: initialCount - this.pushSubscriptions.length };
+    },
+  };
+
+  userEmailConfig = {
+    findUnique: async (args: any) => {
+      if (args?.where?.user_id) {
+        return this.userEmailConfigs.find((c) => c.user_id === args.where.user_id) || null;
+      }
+      if (args?.where?.id) {
+        return this.userEmailConfigs.find((c) => c.id === args.where.id) || null;
+      }
+      return null;
+    },
+    findMany: async (args?: any) => {
+      let result = [...this.userEmailConfigs];
+      if (args?.where?.is_active !== undefined) {
+        result = result.filter((c) => c.is_active === args.where.is_active);
+      }
+      return result;
+    },
+    upsert: async (args: any) => {
+      const idx = this.userEmailConfigs.findIndex((c) => c.user_id === args.where.user_id);
+      if (idx >= 0) {
+        this.userEmailConfigs[idx] = {
+          ...this.userEmailConfigs[idx],
+          ...args.update,
+          updated_at: new Date(),
+        };
+        return this.userEmailConfigs[idx];
+      }
+      const newConfig = {
+        id: randomUUID(),
+        ...args.create,
+        created_at: new Date(),
+        updated_at: new Date(),
+      };
+      this.userEmailConfigs.push(newConfig);
+      return newConfig;
+    },
+    update: async (args: any) => {
+      const idx = this.userEmailConfigs.findIndex((c) => c.user_id === args.where.user_id || c.id === args.where.id);
+      if (idx >= 0) {
+        this.userEmailConfigs[idx] = {
+          ...this.userEmailConfigs[idx],
+          ...args.data,
+          updated_at: new Date(),
+        };
+        return this.userEmailConfigs[idx];
+      }
+      throw new Error('Config not found');
+    },
+    delete: async (args: any) => {
+      const idx = this.userEmailConfigs.findIndex((c) => c.user_id === args.where.user_id);
+      if (idx >= 0) {
+        return this.userEmailConfigs.splice(idx, 1)[0];
+      }
+      return null;
     },
   };
 

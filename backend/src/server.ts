@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import { createApp } from './app.js';
 import { prisma, ensureDefaultColumnsExist } from './lib/prisma.js';
+import { EmailSyncService } from './services/email-sync.service.js';
 
 const PORT = process.env.PORT || 4000;
 const app = createApp();
@@ -13,6 +14,9 @@ const server = app.listen(PORT, async () => {
 
   // Garante que as colunas padrão existam no banco
   await ensureDefaultColumnsExist();
+
+  // Inicia o sincronizador periódico de e-mails em segundo plano
+  EmailSyncService.startBackgroundScheduler();
 });
 
 // Encerramento limpo de conexões com o banco de dados
