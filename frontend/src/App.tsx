@@ -113,18 +113,20 @@ export function App() {
     return unsubscribe;
   }, []);
 
-  // Carrega colunas e tarefas
-  const loadData = useCallback(async () => {
+  // Carrega colunas e tarefas (suporta modo silencioso para sync em segundo plano)
+  const loadData = useCallback(async (isSilent = false) => {
     if (!api.isAuthenticated()) {
-      setIsLoading(false);
+      if (!isSilent) setIsLoading(false);
       return;
     }
 
     try {
-      setIsLoading(true);
-      setApiError(null);
+      if (!isSilent) {
+        setIsLoading(true);
+        setApiError(null);
+      }
 
-      // Busca colunas e tarefas em paralelo
+      // Busca colunas e tarefas atualizadas em paralelo
       const [fetchedColumns, fetchedTasks] = await Promise.all([
         api.getColumns().catch(() => INITIAL_DEFAULT_COLUMNS),
         api.getTasks().catch(() => INITIAL_DEMO_TASKS),
@@ -132,20 +134,55 @@ export function App() {
 
       setColumns(fetchedColumns.length > 0 ? fetchedColumns : INITIAL_DEFAULT_COLUMNS);
       setTasks(fetchedTasks);
+      setApiError(null);
     } catch (err: any) {
-      console.warn('Backend offline ou inacessível. Usando dados locais.', err);
-      setApiError('Não foi possível conectar à API backend. Exibindo dados locais.');
-      setColumns(INITIAL_DEFAULT_COLUMNS);
-      setTasks(INITIAL_DEMO_TASKS);
+      if (!isSilent) {
+        console.warn('Backend offline ou inacessível. Usando dados locais.', err);
+        setApiError('Não foi possível conectar à API backend. Exibindo dados locais.');
+        setColumns(INITIAL_DEFAULT_COLUMNS);
+        setTasks(INITIAL_DEMO_TASKS);
+      }
     } finally {
-      setIsLoading(false);
+      if (!isSilent) setIsLoading(false);
     }
   }, []);
 
+  // 1. Carregamento inicial ao autenticar
   useEffect(() => {
     if (isAuthenticated) {
-      loadData();
+      loadData(false);
     }
+  }, [isAuthenticated, loadData]);
+
+  // 2. Sincronização periódica em tempo real (Polling a cada 5s para sincronizar celular e PC)
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    const interval = setInterval(() => {
+      loadData(true);
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [isAuthenticated, loadData]);
+
+  // 3. Sincronização imediata ao alternar de aba ou voltar ao celular/PC (focus/visibility)
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    const handleSyncOnFocus = () => {
+      loadData(true);
+    };
+
+    window.addEventListener('focus', handleSyncOnFocus);
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') {
+        handleSyncOnFocus();
+      }
+    });
+
+    return () => {
+      window.removeEventListener('focus', handleSyncOnFocus);
+    };
   }, [isAuthenticated, loadData]);
 
   const handleLoginSuccess = (user: User) => {
@@ -468,7 +505,7 @@ export function App() {
               <span>{apiError}</span>
             </div>
             <button
-              onClick={loadData}
+              onClick={() => loadData(false)}
               className="flex items-center gap-1 font-bold text-amber-900 hover:underline"
             >
               <RefreshCw className="w-3.5 h-3.5" />

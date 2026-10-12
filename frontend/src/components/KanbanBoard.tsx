@@ -12,6 +12,7 @@ import {
   SlidersHorizontal,
   Menu,
   Kanban,
+  ArrowRightLeft,
 } from 'lucide-react';
 import { Task, ColumnList } from '../types/task';
 
@@ -50,6 +51,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
   const [addingTaskCol, setAddingTaskCol] = useState<string | null>(null);
   const [quickTitle, setQuickTitle] = useState('');
   const [activeMenuColId, setActiveMenuColId] = useState<string | null>(null);
+  const [movingCardId, setMovingCardId] = useState<string | null>(null);
 
   const handleDragStart = (e: React.DragEvent, taskId: string) => {
     e.dataTransfer.setData('text/plain', taskId);
@@ -301,7 +303,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex items-center gap-1 opacity-60 sm:opacity-0 group-hover:opacity-100 transition-opacity">
                         <button
                           type="button"
                           onClick={(e) => {
@@ -313,8 +315,65 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
-                        <GripVertical className="w-3.5 h-3.5 text-gray-300" />
+                        <GripVertical className="w-3.5 h-3.5 text-gray-300 hidden sm:block" />
                       </div>
+                    </div>
+
+                    {/* Barra de Ação Rápida: Mover de Lista no Celular ou Desktop com 1 Toque */}
+                    <div className="mt-2.5 pt-2 border-t border-gray-100 flex items-center justify-between">
+                      <div className="relative">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setMovingCardId(movingCardId === task.id ? null : task.id);
+                          }}
+                          className="px-2 py-1 bg-gray-100/90 hover:bg-blue-50 text-gray-700 hover:text-blue-700 active:bg-blue-100 font-semibold rounded-lg text-[11px] flex items-center gap-1.5 transition-colors shadow-2xs"
+                          title="Mover cartão para outra lista"
+                        >
+                          <ArrowRightLeft className="w-3 h-3 text-blue-600" />
+                          <span>Mover para...</span>
+                        </button>
+
+                        {/* Popover / Menu de Destino */}
+                        {movingCardId === task.id && (
+                          <div
+                            onClick={(e) => e.stopPropagation()}
+                            className="absolute left-0 bottom-full mb-1.5 z-50 bg-white rounded-xl shadow-2xl border border-gray-200 py-1.5 w-52 animate-in fade-in zoom-in-95"
+                          >
+                            <div className="px-3 py-1 text-[10px] font-bold text-gray-400 uppercase tracking-wider border-b border-gray-100 flex items-center justify-between">
+                              <span>Mover para:</span>
+                              <span className="text-[9px] text-blue-600">1 toque</span>
+                            </div>
+                            <div className="max-h-48 overflow-y-auto py-1">
+                              {columns
+                                .filter((c) => c.slug !== col.slug)
+                                .map((targetCol) => (
+                                  <button
+                                    key={targetCol.id}
+                                    type="button"
+                                    onClick={async (e) => {
+                                      e.stopPropagation();
+                                      setMovingCardId(null);
+                                      await onMoveTask(task.id, targetCol.slug);
+                                    }}
+                                    className="w-full px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-blue-50 hover:text-blue-700 active:bg-blue-100 flex items-center gap-2 text-left transition-colors"
+                                  >
+                                    <span
+                                      className="w-2.5 h-2.5 rounded-full flex-shrink-0 shadow-2xs"
+                                      style={{ backgroundColor: targetCol.color || '#3b82f6' }}
+                                    />
+                                    <span className="truncate">{targetCol.name}</span>
+                                  </button>
+                                ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      <span className="text-[10px] text-gray-400 font-medium hidden sm:inline">
+                        ou arraste
+                      </span>
                     </div>
                   </div>
                 );
