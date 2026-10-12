@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { prisma } from '../lib/prisma.js';
 import { calculateNextDueDate, calculateNextNOccurrences } from '../services/recurrence.service.js';
 import { RecurrenceRule } from '../types/task.js';
+import { RealtimeService } from '../services/realtime.service.js';
 
 // Schemas de validação Zod
 const createTaskSchema = z.object({
@@ -124,6 +125,9 @@ export const TaskController = {
         },
       });
 
+      // Notifica todos os dispositivos conectados do usuário em tempo real
+      RealtimeService.notifyUser(req.userId, 'task_created', newTask);
+
       res.status(201).json(newTask);
     } catch (error) {
       console.error('Erro ao criar tarefa:', error);
@@ -171,6 +175,9 @@ export const TaskController = {
         where: { id },
         data: updateData,
       });
+
+      // Notifica todos os dispositivos conectados do usuário em tempo real
+      RealtimeService.notifyUser(req.userId, 'task_updated', updatedTask);
 
       res.status(200).json(updatedTask);
     } catch (error) {
@@ -249,6 +256,9 @@ export const TaskController = {
         return { completedTask, nextTask };
       });
 
+      // Notifica todos os dispositivos conectados do usuário em tempo real
+      RealtimeService.notifyUser(req.userId, 'task_completed', result);
+
       res.status(200).json({
         completedTask: result.completedTask,
         nextTask: result.nextTask,
@@ -276,6 +286,9 @@ export const TaskController = {
       }
 
       await prisma.task.delete({ where: { id } });
+
+      // Notifica todos os dispositivos conectados do usuário em tempo real
+      RealtimeService.notifyUser(req.userId, 'task_deleted', { id });
 
       res.status(200).json({ message: 'Tarefa excluída com sucesso', id });
     } catch (error) {

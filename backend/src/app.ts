@@ -5,6 +5,7 @@ import taskRoutes from './routes/task.routes.js';
 import webhookRoutes from './routes/webhook.routes.js';
 import columnRoutes from './routes/column.routes.js';
 import notificationRoutes from './routes/notification.routes.js';
+import realtimeRoutes from './routes/realtime.routes.js';
 import { authMiddleware } from './middlewares/auth.middleware.js';
 
 export function createApp(): Express {
@@ -82,6 +83,9 @@ export function createApp(): Express {
 
   // Notificações Web Push (VAPID, registro de Service Worker e teste)
   app.use('/notifications', notificationRoutes);
+
+  // Sincronização em tempo real via Server-Sent Events (SSE)
+  app.use('/realtime', realtimeRoutes);
 
   // Tratamento de 404 (Rota não encontrada)
   app.use((req: Request, res: Response) => {

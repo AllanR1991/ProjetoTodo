@@ -228,7 +228,76 @@ class ApiService {
       method: 'POST',
     });
   }
+
+  // Conexão em tempo real (Server-Sent Events) para sincronização instantânea entre PC e Celular
+  subscribeToRealtime(
+    onEvent: (event: { type: string; data: any }) => void,
+    onError?: (err: any) => void
+  ): () => void {
+    if (typeof window === 'undefined') return () => {};
+
+    const token = this.getToken();
+    const url = `${API_BASE_URL}/realtime/events?token=${encodeURIComponent(token || '')}`;
+
+    let eventSource: EventSource | null = null;
+    let reconnectTimeout: any = null;
+    let isClosed = false;
+
+    const connect = () => {
+      if (isClosed) return;
+      try {
+        eventSource = new EventSource(url);
+
+        const eventTypes = [
+          'task_created',
+          'task_updated',
+          'task_completed',
+          'task_deleted',
+          'columns_updated',
+        ];
+
+        eventTypes.forEach((type) => {
+          eventSource?.addEventListener(type, (e: MessageEvent) => {
+            try {
+              const data = JSON.parse(e.data);
+              onEvent({ type, data });
+            } catch (parseErr) {
+              console.warn(`[Realtime] Erro ao processar evento "${type}":`, parseErr);
+            }
+          });
+        });
+
+        eventSource.onerror = (err) => {
+          if (eventSource?.readyState === EventSource.CLOSED) {
+            eventSource.close();
+            eventSource = null;
+            if (!isClosed) {
+              // Tenta reconectar após 4 segundos se o servidor reiniciar
+              reconnectTimeout = setTimeout(connect, 4000);
+            }
+          }
+          if (onError) onError(err);
+        };
+      } catch (err) {
+        if (!isClosed) {
+          reconnectTimeout = setTimeout(connect, 4000);
+        }
+      }
+    };
+
+    connect();
+
+    return () => {
+      isClosed = true;
+      if (reconnectTimeout) clearTimeout(reconnectTimeout);
+      if (eventSource) {
+        eventSource.close();
+        eventSource = null;
+      }
+    };
+  }
 }
 
 export const api = new ApiService();
+
 

@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { z } from 'zod';
 import { prisma } from '../lib/prisma.js';
+import { RealtimeService } from '../services/realtime.service.js';
 
 const createColumnSchema = z.object({
   name: z.string().min(1, 'Nome da coluna é obrigatório').max(100),
@@ -86,6 +87,8 @@ export const ColumnController = {
         },
       });
 
+      RealtimeService.notifyUser(req.userId, 'columns_updated', { type: 'created', column: newColumn });
+
       res.status(201).json(newColumn);
     } catch (error) {
       console.error('Erro ao criar coluna:', error);
@@ -115,6 +118,8 @@ export const ColumnController = {
         where: { id },
         data: parsed.data,
       });
+
+      RealtimeService.notifyUser(req.userId, 'columns_updated', { type: 'updated', column: updated });
 
       res.status(200).json(updated);
     } catch (error) {
@@ -148,6 +153,9 @@ export const ColumnController = {
       });
 
       const deleted = await prisma.column.delete({ where: { id } });
+
+      RealtimeService.notifyUser(req.userId, 'columns_updated', { type: 'deleted', id });
+
       res.status(200).json({
         message: 'Coluna excluída com sucesso e tarefas preservadas no backlog',
         deleted,

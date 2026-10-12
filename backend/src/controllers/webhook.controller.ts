@@ -69,9 +69,13 @@ export const WebhookController = {
 
       console.log(`[Webhook] Tarefa criada via e-mail: "${task.title}" (ID: ${task.id})`);
 
-      // Dispara notificação push para os dispositivos instalados
+      // Dispara notificação push e atualiza clientes em tempo real (SSE)
       try {
         const { NotificationService } = await import('../services/notification.service.js');
+        const { RealtimeService } = await import('../services/realtime.service.js');
+
+        RealtimeService.broadcastAll('task_created', task);
+
         await NotificationService.sendNotificationToUser(null, {
           title: '📧 Nova tarefa via e-mail',
           body: task.title,
@@ -79,7 +83,7 @@ export const WebhookController = {
           vibrate: [250, 100, 250],
         });
       } catch (pushErr) {
-        console.warn('⚠️ [Webhook] Não foi possível disparar push notification:', pushErr);
+        console.warn('⚠️ [Webhook] Não foi possível disparar push notification / SSE:', pushErr);
       }
 
       res.status(201).json({

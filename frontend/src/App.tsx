@@ -12,6 +12,7 @@ import { Task, ListType, UpdateTaskDTO, RecurrenceRule, ColumnList, User, Create
 import { triggerHaptic } from './services/notification';
 import { api } from './services/api';
 import { generateUUID } from './utils/uuid';
+import { getUserCache, setUserCache, clearUserCache } from './services/cache';
 import { LoginScreen } from './components/LoginScreen';
 import { AlertCircle, RefreshCw, Plus } from 'lucide-react';
 
@@ -68,10 +69,29 @@ export function App() {
   const [currentUser, setCurrentUser] = useState<User | null>(() => api.getCurrentUser());
 
   const [currentList, setCurrentList] = useState<ListType>('my_day');
-  const [columns, setColumns] = useState<ColumnList[]>(INITIAL_DEFAULT_COLUMNS);
-  const [tasks, setTasks] = useState<Task[]>([]);
+
+  // Inicializa com cache seguro do usuário para carregamento INSTANTÂNEO (0 delay)
+  const [columns, setColumns] = useState<ColumnList[]>(() => {
+    const user = api.getCurrentUser();
+    const cached = getUserCache<ColumnList[]>(user?.id, 'columns');
+    return cached && cached.length > 0 ? cached : INITIAL_DEFAULT_COLUMNS;
+  });
+
+  const [tasks, setTasks] = useState<Task[]>(() => {
+    const user = api.getCurrentUser();
+    const cached = getUserCache<Task[]>(user?.id, 'tasks');
+    return cached || [];
+  });
+
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+
+  // Se já temos tarefas locais salvas em cache, nunca trava a tela com tela branca ou spinner
+  const [isLoading, setIsLoading] = useState<boolean>(() => {
+    const user = api.getCurrentUser();
+    const cached = getUserCache<Task[]>(user?.id, 'tasks');
+    return !cached || cached.length === 0;
+  });
+
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
   const [notification, setNotification] = useState<string | null>(null);
@@ -145,59 +165,127 @@ export function App() {
     return unsubscribe;
   }, []);
 
-  // Carrega colunas e tarefas (suporta modo silencioso para sync em segundo plano)
+  // Persistência automática no cache seguro local isolado por usuário
+  useEffect(() => {
+    if (currentUser && tasks.length > 0) {
+      setUserCache(currentUser.id, 'tasks', tasks);
+    }
+  }, [currentUser, tasks]);
+
+  useEffect(() => {
+    if (currentUser && columns.length > 0) {
+      setUserCache(currentUser.id, 'columns', columns);
+    }
+  }, [currentUser, columns]);
+
+  // Carrega colunas e tarefas (suporta modo silencioso para sync em segundo plano sem piscar tela)
   const loadData = useCallback(async (isSilent = false) => {
     if (!api.isAuthenticated()) {
-      if (!isSilent) setIsLoading(false);
+      setIsLoading(false);
       return;
     }
 
+    const user = api.getCurrentUser();
+    const hasCached = Boolean(user && getUserCache<Task[]>(user.id, 'tasks')?.length);
+
     try {
-      if (!isSilent) {
+      if (!isSilent && !hasCached) {
         setIsLoading(true);
-        setApiError(null);
       }
+      setApiError(null);
 
       // Busca colunas e tarefas atualizadas em paralelo
       const [fetchedColumns, fetchedTasks] = await Promise.all([
-        api.getColumns().catch(() => INITIAL_DEFAULT_COLUMNS),
-        api.getTasks().catch(() => INITIAL_DEMO_TASKS),
+        api.getColumns().catch(() => null),
+        api.getTasks().catch(() => null),
       ]);
 
-      setColumns(fetchedColumns.length > 0 ? fetchedColumns : INITIAL_DEFAULT_COLUMNS);
-      setTasks(fetchedTasks);
+      if (fetchedColumns && fetchedColumns.length > 0) {
+        setColumns(fetchedColumns);
+        if (user) setUserCache(user.id, 'columns', fetchedColumns);
+      }
+
+      if (fetchedTasks) {
+        setTasks(fetchedTasks);
+        if (user) setUserCache(user.id, 'tasks', fetchedTasks);
+      }
       setApiError(null);
     } catch (err: any) {
-      if (!isSilent) {
-        console.warn('Backend offline ou inacessível. Usando dados locais.', err);
-        setApiError('Não foi possível conectar à API backend. Exibindo dados locais.');
-        setColumns(INITIAL_DEFAULT_COLUMNS);
-        setTasks(INITIAL_DEMO_TASKS);
+      console.warn('Backend acordando ou offline. Mantendo cache seguro local.', err);
+      if (!hasCached) {
+        setApiError('Servidor iniciando na nuvem. Seus dados locais continuam seguros.');
       }
     } finally {
-      if (!isSilent) setIsLoading(false);
+      setIsLoading(false);
     }
   }, []);
 
-  // 1. Carregamento inicial ao autenticar
+  // 1. Carregamento inicial em segundo plano
   useEffect(() => {
     if (isAuthenticated) {
-      loadData(false);
+      loadData(true);
     }
   }, [isAuthenticated, loadData]);
 
-  // 2. Sincronização periódica em tempo real (Polling a cada 5s para sincronizar celular e PC)
+  // 2. SINCRONIZAÇÃO EM TEMPO REAL VIA SSE (Server-Sent Events)
+  // Celular e PC atualizam instantaneamente (< 100ms) sem necessidade de F5
+  useEffect(() => {
+    if (!isAuthenticated || !currentUser) return;
+
+    const unsubscribe = api.subscribeToRealtime((event) => {
+      const { type, data } = event;
+
+      if (type === 'task_created') {
+        setTasks((prev) => {
+          if (prev.some((t) => t.id === data.id)) return prev;
+          const updated = [data, ...prev];
+          setUserCache(currentUser.id, 'tasks', updated);
+          return updated;
+        });
+        showToast(`✨ Nova tarefa sincronizada: "${data.title}"`);
+      } else if (type === 'task_updated') {
+        setTasks((prev) => {
+          const updated = prev.map((t) => (t.id === data.id ? { ...t, ...data } : t));
+          setUserCache(currentUser.id, 'tasks', updated);
+          return updated;
+        });
+      } else if (type === 'task_completed') {
+        setTasks((prev) => {
+          const completedId = data.completedTask?.id || data.id;
+          let updated = prev.map((t) => (t.id === completedId ? (data.completedTask || data) : t));
+          if (data.nextTask && !updated.some((t) => t.id === data.nextTask.id)) {
+            updated = [data.nextTask, ...updated];
+          }
+          setUserCache(currentUser.id, 'tasks', updated);
+          return updated;
+        });
+      } else if (type === 'task_deleted') {
+        setTasks((prev) => {
+          const updated = prev.filter((t) => t.id !== data.id);
+          setUserCache(currentUser.id, 'tasks', updated);
+          return updated;
+        });
+        if (selectedTaskId === data.id) setSelectedTaskId(null);
+      } else if (type === 'columns_updated') {
+        loadData(true);
+      }
+    });
+
+    return unsubscribe;
+  }, [isAuthenticated, currentUser, loadData, selectedTaskId]);
+
+  // 3. Sincronização de segurança periódica (Polling a cada 8s como fallback)
   useEffect(() => {
     if (!isAuthenticated) return;
 
     const interval = setInterval(() => {
       loadData(true);
-    }, 5000);
+    }, 8000);
 
     return () => clearInterval(interval);
   }, [isAuthenticated, loadData]);
 
-  // 3. Sincronização imediata ao alternar de aba ou voltar ao celular/PC (focus/visibility)
+  // 4. Sincronização imediata ao desbloquear celular ou alternar abas no PC (focus/visibility)
   useEffect(() => {
     if (!isAuthenticated) return;
 
@@ -220,13 +308,25 @@ export function App() {
   const handleLoginSuccess = (user: User) => {
     setCurrentUser(user);
     setIsAuthenticated(true);
+    const cachedTasks = getUserCache<Task[]>(user.id, 'tasks');
+    const cachedCols = getUserCache<ColumnList[]>(user.id, 'columns');
+    if (cachedTasks && cachedTasks.length > 0) setTasks(cachedTasks);
+    if (cachedCols && cachedCols.length > 0) setColumns(cachedCols);
     showToast(`Bem-vindo de volta, ${user.name}!`);
+    loadData(true);
   };
 
   const handleLogout = () => {
+    // Limpa imediatamente todo o cache para segurança total contra vazamento de dados
+    if (currentUser) {
+      clearUserCache(currentUser.id);
+    }
+    clearUserCache();
     api.logout();
     setIsAuthenticated(false);
     setCurrentUser(null);
+    setTasks([]);
+    setColumns(INITIAL_DEFAULT_COLUMNS);
     showToast('Você saiu com segurança.');
   };
 
