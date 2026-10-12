@@ -114,6 +114,7 @@ async function runTests() {
   const createdCol = await prisma.column.create({
     data: {
       name: 'Em Testes / QA',
+      slug: 'em-testes-qa',
       color: '#8b5cf6',
       icon: 'CheckSquare',
     },
@@ -150,6 +151,9 @@ async function runTests() {
   });
   assert(movedTask.list_type === 'my_day' && movedTask.position === 2, 'Drag and Drop: tarefa movida para "my_day" na posição 2');
 
+  // Limpeza
+  await prisma.task.delete({ where: { id: testTask.id } });
+
   // -------------------------------------------------------------------------
   // 4. TESTES DO WEBHOOK DE E-MAIL
   // -------------------------------------------------------------------------
@@ -170,6 +174,10 @@ async function runTests() {
       is_completed: false,
     },
   });
+  assert(webhookTask.title === 'Proposta Comercial Cliente VIP', 'Webhook de E-mail: tarefa gerada a partir do e-mail');
+
+  // Limpeza
+  await prisma.task.delete({ where: { id: webhookTask.id } });
 
   // -------------------------------------------------------------------------
   // 5. TESTES DE AUTENTICAÇÃO E SEGURANÇA (BCRYPT & JWT)
